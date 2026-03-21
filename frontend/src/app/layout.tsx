@@ -1,20 +1,9 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
-
 export const metadata: Metadata = {
-  title: "SafeDoc — Document PII Redaction",
-  description: "Intelligent PII detection and redaction for sensitive documents. Supports Aadhaar, PAN, Passport, Driving License, Voter ID, and more. Scanned or digital PDFs.",
+  title: "SafeDoc | Intelligent PII Redaction",
+  description: "Securely detect and redact PII from documents with zero persistence.",
 };
 
 export default function RootLayout({
@@ -24,9 +13,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link href="https://fonts.googleapis.com/css2?family=Krona+One&display=swap" rel="stylesheet" />
+      </head>
+      <body className="bg-slate-50 text-slate-900 antialiased selection:bg-indigo-100 selection:text-indigo-900 font-sans" style={{ fontFamily: '"Krona One", sans-serif' }}>
         {children}
       </body>
     </html>

@@ -1,398 +1,227 @@
-"use client";
+import React from 'react';
+import Link from 'next/link';
+import { Shield, FileSearch, CheckCircle, ArrowRight, EyeOff, Trash2, UserCheck, Scan, Lock, Cpu, ServerOff, Zap } from 'lucide-react';
 
-import React, { useState } from 'react';
-import { FileUpload } from '@/components/FileUpload';
-import { RedactionConfig } from '@/components/RedactionConfig';
-import { Button } from '@/components/ui/Button';
-import axios from 'axios';
-import { Shield, Lock, FileText, CheckCircle, ArrowLeft, Download, Eye, RotateCcw, Scan, Zap, KeyRound } from 'lucide-react';
-import { Card } from '@/components/ui/Card';
-
-const API_URL = 'http://localhost:8000';
-
-export default function Home() {
-  const [step, setStep] = useState<'upload' | 'configure' | 'password' | 'processing' | 'result'>('upload');
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [redactionLevel, setRedactionLevel] = useState<string>('medium');
-  const [redactedPdfUrl, setRedactedPdfUrl] = useState<string | null>(null);
-  const [downloadFilename, setDownloadFilename] = useState<string>('redacted_document.pdf');
-  const [error, setError] = useState<string | null>(null);
-  const [processingTime, setProcessingTime] = useState<number | null>(null);
-  const [pdfPassword, setPdfPassword] = useState<string>('');
-  const [passwordError, setPasswordError] = useState<string | null>(null);
-
-  const handleFileUpload = (file: File) => {
-    setSelectedFile(file);
-    setError(null);
-    setStep('configure');
-  };
-
-  const doRedact = async (password?: string) => {
-    if (!selectedFile) return;
-
-    setStep('processing');
-    setError(null);
-    setPasswordError(null);
-    const startTime = Date.now();
-
-    try {
-      const formData = new FormData();
-      formData.append('file', selectedFile);
-      formData.append('redaction_level', redactionLevel);
-      if (password) {
-        formData.append('password', password);
-      }
-
-      const response = await axios.post(`${API_URL}/redact`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-        responseType: 'blob',
-        validateStatus: (status) => status < 500, // Don't throw on 4xx
-      });
-
-      // Check if password is required (HTTP 423)
-      if (response.status === 423) {
-        // Parse the JSON error from the blob response
-        const text = await response.data.text();
-        const errorData = JSON.parse(text);
-
-        if (errorData.error === 'password_required') {
-          setPasswordError(password ? errorData.message : null);
-          setPdfPassword('');
-          setStep('password');
-          return;
-        }
-      }
-
-      // Check for other errors
-      if (response.status >= 400) {
-        const text = await response.data.text();
-        try {
-          const errorData = JSON.parse(text);
-          setError(errorData.detail || 'Error processing file.');
-        } catch {
-          setError('Error processing file. Make sure the backend is running.');
-        }
-        setStep('configure');
-        return;
-      }
-
-      // Success — create blob URL
-      const blob = new Blob([response.data], { type: 'application/pdf' });
-      const url = URL.createObjectURL(blob);
-      setRedactedPdfUrl(url);
-
-      setProcessingTime(Math.round((Date.now() - startTime) / 1000));
-
-      const disposition = response.headers['content-disposition'];
-      if (disposition) {
-        const match = disposition.match(/filename="?(.+?)"?$/);
-        if (match) setDownloadFilename(match[1]);
-      } else {
-        const nameWithoutExt = selectedFile.name.replace(/\.(pdf|png|jpg|jpeg|bmp|tiff?)$/i, '');
-        setDownloadFilename(`${nameWithoutExt}_redacted.pdf`);
-      }
-
-      setStep('result');
-    } catch (err: any) {
-      console.error('Redaction error:', err);
-      setError('Error processing file. Make sure the backend server is running on port 8000.');
-      setStep('configure');
-    }
-  };
-
-  const handleProceed = () => doRedact();
-
-  const handlePasswordSubmit = () => {
-    if (!pdfPassword.trim()) {
-      setPasswordError('Please enter the password.');
-      return;
-    }
-    doRedact(pdfPassword);
-  };
-
-  const handleDownload = () => {
-    if (!redactedPdfUrl) return;
-    const a = document.createElement('a');
-    a.href = redactedPdfUrl;
-    a.download = downloadFilename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-  };
-
-  const handleReset = () => {
-    if (redactedPdfUrl) {
-      URL.revokeObjectURL(redactedPdfUrl);
-    }
-    setStep('upload');
-    setSelectedFile(null);
-    setRedactedPdfUrl(null);
-    setRedactionLevel('medium');
-    setError(null);
-    setProcessingTime(null);
-    setPdfPassword('');
-    setPasswordError(null);
-  };
-
+export default function LandingPage() {
   return (
-    <main className="min-h-screen p-8 md:p-24 relative overflow-hidden">
-      {/* Background blobs */}
-      <div className="absolute top-20 left-20 w-72 h-72 bg-blue-500/20 rounded-full blur-[100px] pointer-events-none" />
-      <div className="absolute bottom-20 right-20 w-96 h-96 bg-purple-500/20 rounded-full blur-[100px] pointer-events-none" />
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-indigo-500/10 rounded-full blur-[120px] pointer-events-none" />
+    <div className="min-h-screen relative bg-slate-50 text-slate-900 overflow-hidden selection:bg-indigo-100 selection:text-indigo-900">
+      
+      {/* Advanced Animated Aurora & Background Grid */}
+      <div className="absolute inset-0 bg-grid-slate-100 [mask-image:linear-gradient(to_bottom,white,transparent)] z-0" />
+      <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-cyan-300/30 rounded-full mix-blend-multiply filter blur-[100px] animate-blob z-0" />
+      <div className="absolute top-[20%] right-[-10%] w-[600px] h-[600px] bg-fuchsia-300/30 rounded-full mix-blend-multiply filter blur-[120px] animate-blob animation-delay-2000 z-0" />
+      <div className="absolute bottom-[-20%] left-[20%] w-[600px] h-[600px] bg-blue-300/30 rounded-full mix-blend-multiply filter blur-[100px] animate-blob animation-delay-4000 z-0" />
 
-      <div className="max-w-6xl mx-auto space-y-16 relative z-10">
-        {/* Header */}
-        <header className="text-center space-y-4">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 backdrop-blur-md mb-4">
-            <Shield className="w-4 h-4 text-blue-400" />
-            <span className="text-sm font-medium text-gray-300">Privacy-First Document Protection</span>
+      {/* Navigation */}
+      <nav className="relative z-50 flex items-center justify-between px-6 lg:px-12 py-6 max-w-7xl mx-auto backdrop-blur-sm">
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 rounded-2xl bg-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-600/30">
+            <Shield className="w-6 h-6 text-white" />
           </div>
-          <h1 className="text-5xl md:text-7xl font-bold tracking-tight text-white mb-6">
-            Safe<span className="text-gradient">Doc</span>
-          </h1>
-          <p className="text-xl text-gray-400 max-w-2xl mx-auto">
-            Automatically detect and redact sensitive PII from your documents.
-            Upload once, download safe. Aadhaar, PAN, Passport & more — gone in seconds.
-          </p>
-        </header>
-
-        {/* Step Indicator */}
-        {step !== 'upload' && (
-          <div className="flex items-center justify-center gap-2 text-sm">
-            <button 
-              onClick={handleReset}
-              className="flex items-center gap-1 text-gray-400 hover:text-white transition-colors"
-            >
-              <ArrowLeft className="w-3 h-3" />
-              Start Over
-            </button>
-            <span className="text-gray-600 mx-2">|</span>
-            <div className="flex items-center gap-2">
-              <StepDot active={false} done={true} label="Upload" />
-              <StepLine />
-              <StepDot
-                active={step === 'configure' || step === 'password'}
-                done={step === 'processing' || step === 'result'}
-                label="Configure"
-              />
-              <StepLine />
-              <StepDot active={step === 'processing'} done={step === 'result'} label="Process" />
-              <StepLine />
-              <StepDot active={step === 'result'} done={false} label="Download" />
-            </div>
-          </div>
-        )}
-
-        {/* Main Content */}
-        <div className="w-full">
-          {/* STEP 1: Upload */}
-          {step === 'upload' && (
-            <div className="space-y-8">
-              <FileUpload onFileUpload={handleFileUpload} />
-
-              <div className="grid md:grid-cols-4 gap-5 mt-12">
-                {[
-                  { icon: Scan, title: "Smart Detection", desc: "Auto-detects scanned vs digital documents for optimal redaction." },
-                  { icon: Lock, title: "Permanent Redaction", desc: "Redacted data is irrecoverable. Flattened, clean output." },
-                  { icon: Zap, title: "Instant Processing", desc: "Upload → Redact → Download in seconds. No waiting." },
-                  { icon: CheckCircle, title: "Privacy First", desc: "Documents processed in-memory. Nothing stored permanently." }
-                ].map((feature, i) => (
-                  <div key={i} className="glass-card flex flex-col items-center text-center space-y-3">
-                    <feature.icon className="w-8 h-8 text-blue-400" />
-                    <h3 className="font-semibold text-white">{feature.title}</h3>
-                    <p className="text-sm text-gray-400">{feature.desc}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* STEP 2: Configure Redaction Level */}
-          {step === 'configure' && selectedFile && (
-            <div className="space-y-6">
-              {error && (
-                <div className="max-w-xl mx-auto p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-sm text-center">
-                  ⚠️ {error}
-                </div>
-              )}
-              <RedactionConfig 
-                selectedLevel={redactionLevel}
-                onSelectLevel={setRedactionLevel}
-                onProceed={handleProceed}
-                fileName={selectedFile.name}
-              />
-            </div>
-          )}
-
-          {/* STEP 2.5: Password Required */}
-          {step === 'password' && selectedFile && (
-            <div className="flex flex-col items-center justify-center space-y-6 py-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
-              <div className="glass-card max-w-md w-full space-y-6 text-center">
-                <div className="inline-flex p-4 rounded-2xl bg-amber-500/15 mx-auto">
-                  <KeyRound className="w-10 h-10 text-amber-400" />
-                </div>
-                
-                <div className="space-y-2">
-                  <h2 className="text-2xl font-bold text-white">Password Protected</h2>
-                  <p className="text-gray-400 text-sm">
-                    <span className="text-blue-400 font-medium">{selectedFile.name}</span> is locked.
-                    Enter the document password to proceed.
-                  </p>
-                </div>
-
-                {passwordError && (
-                  <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-sm">
-                    {passwordError}
-                  </div>
-                )}
-
-                <div className="space-y-4">
-                  <input
-                    type="password"
-                    value={pdfPassword}
-                    onChange={(e) => setPdfPassword(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handlePasswordSubmit()}
-                    placeholder="Enter PDF password"
-                    autoFocus
-                    className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/20 
-                      text-white placeholder-gray-500 focus:outline-none focus:border-blue-400/60 
-                      focus:ring-2 focus:ring-blue-400/20 transition-all text-center text-lg tracking-wider"
-                  />
-                  
-                  <button
-                    onClick={handlePasswordSubmit}
-                    className="w-full px-6 py-3 rounded-xl font-semibold text-sm
-                      bg-gradient-to-r from-blue-500 to-purple-600 text-white
-                      hover:from-blue-600 hover:to-purple-700
-                      shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40
-                      transition-all duration-300 transform hover:scale-[1.02]"
-                  >
-                    Unlock & Redact →
-                  </button>
-
-                  <button
-                    onClick={handleReset}
-                    className="text-gray-500 hover:text-gray-300 text-sm transition-colors"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* STEP 3: Processing */}
-          {step === 'processing' && (
-            <div className="flex flex-col items-center justify-center space-y-6 py-20">
-              <div className="relative w-24 h-24">
-                <div className="absolute inset-0 border-4 border-blue-500/30 rounded-full animate-pulse" />
-                <div className="absolute inset-0 border-t-4 border-blue-500 rounded-full animate-spin" />
-                <Shield className="absolute inset-0 m-auto w-8 h-8 text-blue-400" />
-              </div>
-              <h2 className="text-2xl font-bold text-white">Redacting Document...</h2>
-              <p className="text-gray-400 text-center max-w-md">
-                {redactionLevel === 'low' && "Detecting Aadhaar & PAN numbers..."}
-                {redactionLevel === 'medium' && "Detecting IDs, phone numbers, passport & more..."}
-                {redactionLevel === 'high' && "Deep scan — detecting all PII across your document..."}
-              </p>
-              <div className="flex items-center gap-2 text-xs text-gray-500">
-                <Lock className="w-3 h-3" />
-                Processing locally — your data never leaves your machine
-              </div>
-            </div>
-          )}
-
-          {/* STEP 4: Result — PDF Preview & Download */}
-          {step === 'result' && redactedPdfUrl && (
-            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-2xl font-bold text-white">Redaction Complete ✓</h2>
-                  <p className="text-sm text-gray-400 mt-1">
-                    Level: <span className="capitalize font-medium text-blue-400">{redactionLevel}</span>
-                    {' · '}
-                    {downloadFilename}
-                    {processingTime !== null && (
-                      <> {' · '} <span className="text-emerald-400">{processingTime}s</span></>
-                    )}
-                  </p>
-                </div>
-                <div className="flex gap-3">
-                  <Button variant="outline" size="sm" onClick={handleReset}>
-                    <RotateCcw className="w-4 h-4" /> New File
-                  </Button>
-                  <button
-                    onClick={handleDownload}
-                    className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm
-                      bg-gradient-to-r from-blue-500 to-purple-600 text-white
-                      hover:from-blue-600 hover:to-purple-700
-                      shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40
-                      transition-all duration-300 transform hover:scale-105"
-                  >
-                    <Download className="w-4 h-4" /> Download PDF
-                  </button>
-                </div>
-              </div>
-
-              {/* PDF Preview */}
-              <Card className="relative overflow-hidden">
-                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-500 via-blue-500 to-purple-500" />
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-gray-300 flex items-center gap-2">
-                    <Eye className="w-5 h-5" /> Preview
-                  </h3>
-                  <span className="text-xs text-gray-500 bg-white/5 px-3 py-1 rounded-full">
-                    Redacted PDF — safe to share
-                  </span>
-                </div>
-                <div className="rounded-xl overflow-hidden bg-black/30 border border-white/5">
-                  <iframe
-                    src={redactedPdfUrl}
-                    className="w-full h-[600px]"
-                    title="Redacted PDF Preview"
-                  />
-                </div>
-              </Card>
-
-              {/* Security Info */}
-              <div className="flex items-center justify-center gap-6 text-xs text-gray-500 py-4">
-                <div className="flex items-center gap-1.5">
-                  <Shield className="w-3.5 h-3.5 text-emerald-500" />
-                  Permanent redaction
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <Lock className="w-3.5 h-3.5 text-blue-400" />
-                  Original file deleted
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <CheckCircle className="w-3.5 h-3.5 text-purple-400" />
-                  No data retained
-                </div>
-              </div>
-            </div>
-          )}
+          <span className="text-2xl font-bold tracking-tight text-slate-900">Safe<span className="text-indigo-600">Doc</span></span>
         </div>
-      </div>
-    </main>
-  );
-}
+        
+        <div className="hidden md:flex items-center gap-10 text-sm font-bold text-slate-500">
+          <a href="#how-it-works" className="hover:text-indigo-600 transition-colors">How it Works</a>
+          <a href="#features" className="hover:text-indigo-600 transition-colors">Engine Features</a>
+          <a href="#security" className="hover:text-indigo-600 transition-colors">Security Protocol</a>
+        </div>
+        
+        <div className="flex items-center gap-4">
+          <Link href="/app" className="group flex items-center gap-2 bg-slate-900 text-white px-6 py-3 rounded-full text-sm font-bold shadow-xl shadow-slate-900/20 hover:shadow-2xl hover:-translate-y-0.5 transition-all">
+            Launch App
+            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+          </Link>
+        </div>
+      </nav>
 
-/* Step indicator sub-components */
-function StepDot({ active, done, label }: { active: boolean; done: boolean; label: string }) {
-  return (
-    <div className="flex items-center gap-1.5">
-      <div className={`
-        w-2.5 h-2.5 rounded-full transition-all duration-300
-        ${active ? 'bg-blue-400 shadow-lg shadow-blue-400/50' : done ? 'bg-emerald-400' : 'bg-gray-600'}
-      `} />
-      <span className={`text-xs ${active ? 'text-blue-400 font-medium' : done ? 'text-emerald-400' : 'text-gray-600'}`}>
-        {label}
-      </span>
+      {/* Hero Section */}
+      <section className="relative z-10 pt-24 pb-32 px-6 max-w-7xl mx-auto flex flex-col items-center text-center">
+
+        
+        <h1 className="text-6xl md:text-8xl font-black tracking-tighter leading-[1.05] max-w-5xl text-slate-900 animate-fade-in">
+          The Privacy Layer for 
+          <span className="block text-transparent bg-clip-text bg-gradient-to-r from-cyan-600 via-indigo-600 to-fuchsia-600 mt-2"> Your Documents</span>
+        </h1>
+        
+        <p className="mt-8 text-lg md:text-2xl text-slate-500 max-w-3xl animate-fade-in animation-delay-2000 leading-relaxed font-medium">
+          Automatically detect, human-verify, and permanently flatten sensitive identifiers (Aadhaar, PAN, SSN) before you ever share a file. Powered by in-browser smart OCR.
+        </p>
+        
+        <div className="mt-12 flex flex-col sm:flex-row gap-5 animate-fade-in animation-delay-4000">
+          <Link href="/app" className="group px-10 py-5 bg-indigo-600 rounded-full text-white font-bold text-lg shadow-xl shadow-indigo-600/30 hover:shadow-2xl hover:shadow-indigo-600/50 hover:-translate-y-1 transition-all flex items-center justify-center gap-3">
+            Start Redacting for Free
+            <ArrowRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
+          </Link>
+          <a href="#how-it-works" className="px-10 py-5 bg-white/80 backdrop-blur-md rounded-full text-slate-700 font-bold text-lg shadow-lg border border-slate-200/50 hover:bg-white hover:-translate-y-1 transition-all flex items-center justify-center">
+            See How it Works
+          </a>
+        </div>
+
+        {/* Hero Mockup Preview */}
+        <div className="mt-28 w-full max-w-5xl relative animate-slide-up group">
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-50 via-slate-50/20 to-transparent z-20 pointer-events-none rounded-[2.5rem]" />
+          
+          <div className="relative rounded-[2.5rem] p-3 md:p-5 bg-white/50 backdrop-blur-3xl border border-white/80 shadow-[0_40px_80px_-20px_rgba(0,0,0,0.1)] transition-transform duration-700 hover:-translate-y-2">
+            <div className="rounded-[2rem] overflow-hidden border border-slate-800 shadow-inner bg-black relative aspect-video md:aspect-[21/9]">
+               <img 
+                 src="/vintage_redacted_doc.png" 
+                 alt="Confidential Top Secret Redacted Document"
+                 className="absolute inset-0 w-full h-full object-cover object-top opacity-80 filter contrast-125 transition-transform duration-[2000ms] group-hover:scale-[1.03]"
+                 loading="lazy"
+               />
+               
+               {/* Internal Black Fade Overlay */}
+               <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent pointer-events-none" />
+               
+               {/* Floating UI Overlays */}
+               <div className="absolute top-[20%] left-[5%] md:left-[10%] bg-white/90 backdrop-blur-md animate-float p-4 md:p-5 rounded-3xl shadow-2xl border border-slate-200/50 flex items-center gap-3 md:gap-4 w-max">
+                 <div className="w-10 h-10 md:w-12 md:h-12 rounded-2xl bg-fuchsia-100 flex items-center justify-center">
+                   <Scan className="w-5 h-5 md:w-6 md:h-6 text-fuchsia-600" />
+                 </div>
+                 <div className="text-left">
+                   <p className="text-xs md:text-sm font-black text-slate-900">Aadhaar Detected</p>
+                   <p className="text-[10px] md:text-xs text-slate-500 font-bold mt-0.5 md:mt-1 tracking-widest">XXXX XXXX 9012</p>
+                 </div>
+               </div>
+
+               <div className="absolute bottom-[20%] right-[5%] md:right-[10%] bg-white/90 backdrop-blur-md animate-float animation-delay-2000 p-4 md:p-5 rounded-3xl shadow-2xl border border-slate-200/50 flex items-center gap-3 md:gap-4 w-max">
+                 <div className="w-10 h-10 md:w-12 md:h-12 rounded-2xl bg-cyan-100 flex items-center justify-center">
+                   <Lock className="w-5 h-5 md:w-6 md:h-6 text-cyan-600" />
+                 </div>
+                 <div className="text-left">
+                   <p className="text-xs md:text-sm font-black text-slate-900">Redaction Applied</p>
+                   <p className="text-[10px] md:text-xs text-slate-500 font-bold mt-0.5 md:mt-1">Irrecoverable vector flattening.</p>
+                 </div>
+               </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+
+
+      {/* How it Works Pipeline */}
+      <section id="how-it-works" className="py-32 relative z-10">
+        <div className="max-w-7xl mx-auto px-6 text-center">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-cyan-50 border border-cyan-100 text-cyan-700 text-xs font-bold uppercase tracking-widest mb-6">
+            The Pipeline
+          </div>
+          <h2 className="text-4xl md:text-5xl font-black text-slate-900 mb-20 tracking-tight">4 Steps to Absolute Privacy</h2>
+          
+          <div className="grid md:grid-cols-4 gap-8 relative">
+             {/* Desktop connecting line */}
+             <div className="hidden md:block absolute top-12 left-[10%] right-[10%] h-[2px] bg-gradient-to-r from-cyan-200 via-indigo-200 to-fuchsia-200 z-0" />
+             
+             {[
+               { step: "01", title: "Upload & Parse", desc: "We accept PDFs and Images, instantly extracting layouts in volatile memory.", icon: FileSearch, color: "text-cyan-600", bg: "bg-cyan-100" },
+               { step: "02", title: "Smart OCR", desc: "Tesseract reconstructs flattened pixels into strict text-bounding boxes.", icon: Scan, color: "text-indigo-600", bg: "bg-indigo-100" },
+               { step: "03", title: "Human Review", desc: "You visualize all detected identifiers and verify exactly what to burn.", icon: UserCheck, color: "text-fuchsia-600", bg: "bg-fuchsia-100" },
+               { step: "04", title: "Vector Flat", desc: "Black zones are permanently burned, dropping original pixels forever.", icon: Lock, color: "text-emerald-600", bg: "bg-emerald-100" }
+             ].map((s, i) => (
+               <div key={i} className="relative z-10 flex flex-col items-center group">
+                 <div className={`w-24 h-24 rounded-3xl ${s.bg} flex items-center justify-center shadow-xl shadow-slate-200/50 mb-8 border-4 border-white group-hover:-translate-y-2 transition-transform duration-300`}>
+                   <s.icon className={`w-10 h-10 ${s.color}`} />
+                 </div>
+                 <span className={`text-sm font-black ${s.color} tracking-widest mb-3`}>STAGE {s.step}</span>
+                 <h3 className="text-2xl font-black text-slate-900 mb-3">{s.title}</h3>
+                 <p className="text-slate-500 font-medium leading-relaxed max-w-[200px] mx-auto">{s.desc}</p>
+               </div>
+             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Features Bento Grid */}
+      <section id="features" className="py-32 bg-slate-100/50 relative z-10 border-y border-slate-200/50">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="mb-20 text-center max-w-3xl mx-auto">
+            <h2 className="text-4xl md:text-5xl font-black text-slate-900 mb-6 tracking-tight">Enterprise-grade capabilities. <br/><span className="text-transparent bg-clip-text bg-gradient-to-r from-slate-400 to-slate-600">Built for compliance.</span></h2>
+            <p className="text-xl text-slate-500 font-medium">SafeDoc is engineered to stop sensitive data leaks at the source without relying on dangerous third-party cloud aggregators.</p>
+          </div>
+          
+          <div className="grid md:grid-cols-3 gap-6">
+            <div className="md:col-span-2 bg-white/80 backdrop-blur-xl border border-slate-200/60 shadow-xl shadow-slate-200/40 rounded-[2.5rem] p-10 md:p-14 relative overflow-hidden group hover:border-indigo-300 transition-colors">
+              <div className="relative z-10 w-full md:w-2/3">
+                <div className="w-16 h-16 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center mb-8">
+                  <Scan className="w-8 h-8 text-indigo-600" />
+                </div>
+                <h3 className="text-3xl font-black text-slate-900 mb-4 tracking-tight">Intelligent Spatial OCR</h3>
+                <p className="text-lg text-slate-500 leading-relaxed font-medium">
+                  Upload digital PDFs, scanned documents, or raw images (PNG/JPG). Our pipeline extracts exact physical `(x0, y0, x1, y1)` bounding coordinates to ensure redactions are perfectly aligned and visually flawless.
+                </p>
+              </div>
+              <div className="absolute right-[-10%] bottom-[-20%] opacity-5 group-hover:scale-110 group-hover:opacity-10 transition-all duration-700">
+                <Scan className="w-96 h-96 text-indigo-900" />
+              </div>
+            </div>
+            
+            <div className="bg-white/80 backdrop-blur-xl border border-slate-200/60 shadow-xl shadow-slate-200/40 rounded-[2.5rem] p-10 relative overflow-hidden group hover:border-fuchsia-300 transition-colors">
+              <div className="w-16 h-16 rounded-2xl bg-fuchsia-50 border border-fuchsia-100 flex items-center justify-center mb-8">
+                <UserCheck className="w-8 h-8 text-fuchsia-600" />
+              </div>
+              <h3 className="text-2xl font-black text-slate-900 mb-4 tracking-tight">Human Verification</h3>
+              <p className="text-slate-500 font-medium leading-relaxed">
+                Algorithms hallucinate. We surface all detections for your explicit manual approval before burning the PDF.
+              </p>
+            </div>
+            
+            <div className="bg-white/80 backdrop-blur-xl border border-slate-200/60 shadow-xl shadow-slate-200/40 rounded-[2.5rem] p-10 relative overflow-hidden group hover:border-cyan-300 transition-colors">
+              <div className="w-16 h-16 rounded-2xl bg-cyan-50 border border-cyan-100 flex items-center justify-center mb-8">
+                <EyeOff className="w-8 h-8 text-cyan-600" />
+              </div>
+              <h3 className="text-2xl font-black text-slate-900 mb-4 tracking-tight">10+ Data Profiles</h3>
+              <p className="text-slate-500 font-medium leading-relaxed">
+                Hyper-tuned regex matching for PAN, Aadhaar, Passports, Phones, Bank Accounts, and IFSC codes.
+              </p>
+            </div>
+
+            <div className="md:col-span-2 bg-slate-900 text-white shadow-2xl rounded-[2.5rem] p-10 md:p-14 flex flex-col justify-center relative overflow-hidden group">
+               <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 to-transparent z-0" />
+               <div className="relative z-10">
+                 <div className="w-16 h-16 rounded-2xl bg-slate-800 border border-slate-700 flex items-center justify-center mb-8">
+                   <ServerOff className="w-8 h-8 text-white" />
+                 </div>
+                 <h3 className="text-3xl font-black mb-4 tracking-tight">100% Zero Persistence Storage</h3>
+                 <p className="text-lg text-slate-300 leading-relaxed font-medium">
+                   We treat your data like radioactive material. Files are isolated in temporary processing chunks, and an asynchronous garbage collector physically obliterates everything within 10 minutes.
+                 </p>
+                 <div className="mt-8 flex gap-4">
+                   <span className="px-4 py-2 rounded-full bg-slate-800 text-xs font-bold tracking-widest text-emerald-400 border border-slate-700 flex items-center gap-2"><CheckCircle className="w-3 h-3" /> NO DATABASES</span>
+                   <span className="px-4 py-2 rounded-full bg-slate-800 text-xs font-bold tracking-widest text-emerald-400 border border-slate-700 flex items-center gap-2"><CheckCircle className="w-3 h-3" /> NO LOG TRAIL</span>
+                 </div>
+               </div>
+            </div>
+          </div>
+        </div>
+      </section>
+      
+      {/* Footer CTA */}
+      <section id="security" className="py-32 relative overflow-hidden bg-slate-900">
+        <div className="absolute inset-0 bg-gradient-to-br from-indigo-900/40 via-slate-900 to-fuchsia-900/20 z-0" />
+        <div className="max-w-4xl mx-auto px-6 text-center relative z-10">
+          <div className="w-20 h-20 bg-indigo-500 rounded-3xl flex items-center justify-center mx-auto mb-10 shadow-2xl shadow-indigo-500/50">
+             <Zap className="w-10 h-10 text-white" />
+          </div>
+          <h2 className="text-5xl md:text-7xl font-black text-white mb-8 tracking-tighter">Ready to secure your documents?</h2>
+          <p className="text-xl md:text-2xl text-slate-300 mb-12 max-w-3xl mx-auto font-medium leading-relaxed">
+            Stop risking compliance violations. Redact sensitive identities locally within seconds using SafeDoc's intelligent pipeline.
+          </p>
+          <Link href="/app" className="inline-flex items-center justify-center gap-3 px-10 py-5 bg-white text-slate-900 rounded-full font-black text-lg shadow-2xl shadow-white/10 hover:shadow-white/20 hover:-translate-y-1 transition-all w-full sm:w-auto">
+            Launch SafeDoc Engine <ArrowRight className="w-6 h-6" />
+          </Link>
+          <p className="mt-8 text-slate-500 text-sm font-bold uppercase tracking-widest">Free to use forever. No account required.</p>
+        </div>
+      </section>
+
+      <footer className="bg-slate-950 text-slate-500 py-16 text-center text-sm border-t border-slate-900 relative z-10">
+        <div className="flex items-center justify-center gap-3 mb-6">
+           <Shield className="w-6 h-6 text-slate-600" />
+           <span className="font-black text-slate-300 text-xl tracking-tight">Safe<span className="text-slate-500">Doc</span></span>
+        </div>
+        <p className="font-bold tracking-widest uppercase text-xs">© 2026 SafeDoc Redaction Platform. Built for strict data privacy.</p>
+      </footer>
+
     </div>
   );
-}
-
-function StepLine() {
-  return <div className="w-6 h-px bg-gray-600" />;
 }
