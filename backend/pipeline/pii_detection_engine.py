@@ -14,11 +14,20 @@ and the bounding box (if known) so Stage 4 can apply precise redaction.
 
 import re
 import uuid
+import logging
 from dataclasses import dataclass, field
 from typing import List, Optional, Dict
 import fitz  # PyMuPDF — only for the Rect type
 
 from pipeline.ocr_service import OcrPageResult, OcrWord
+
+try:
+    from presidio_analyzer import AnalyzerEngine
+    analyzer = AnalyzerEngine()
+    logging.info("Presidio AnalyzerEngine loaded successfully.")
+except Exception as e:
+    analyzer = None
+    logging.warning(f"Presidio AnalyzerEngine could not load: {e}")
 
 
 # ---------------------------------------------------------------------------
@@ -46,13 +55,17 @@ PATTERNS: Dict[str, re.Pattern] = {
     "BANK_ACCOUNT": re.compile(r"\b\d{9,18}\b"),
     # IFSC code: ABCD0123456
     "IFSC":         re.compile(r"\b[A-Z]{4}0[A-Z0-9]{6}\b"),
+    # Indian Money format: e.g. 5,11,000.00 or 50,000
+    "MONEY":        re.compile(r"(?:₹|Rs\.?)?\s?\b\d{1,3}(?:,\d{2,3})*(?:\.\d{2})?\b"),
+    # Generic short Employee IDs (4 to 6 digits)
+    "EMP_ID":       re.compile(r"\b\d{4,6}\b"),
 }
 
 # Which patterns are active at each redaction level
 LEVEL_PATTERNS: Dict[str, List[str]] = {
     "low":    ["AADHAAR", "PAN"],
-    "medium": ["AADHAAR", "PAN", "PHONE", "PASSPORT", "DL"],
-    "high":   list(PATTERNS.keys()),   # all 10
+    "medium": ["AADHAAR", "PAN", "PHONE", "PASSPORT", "DL", "MONEY"],
+    "high":   list(PATTERNS.keys()),   # all 12
 }
 
 # Human-readable masks for each type
@@ -67,6 +80,12 @@ MASKS: Dict[str, str] = {
     "DOB":          "XX/XX/XXXX",
     "BANK_ACCOUNT": "XXXXXXXXXXX",
     "IFSC":         "XXXX0XXXXXX",
+    "MONEY":        "[AMOUNT REDACTED]",
+    "EMP_ID":       "[ID REDACTED]",
+    # NLP Masks
+    "PERSON":       "[NAME REDACTED]",
+    "GPE":          "[LOCATION REDACTED]",
+    "ORG":          "[COMPANY REDACTED]",
 }
 
 
@@ -87,7 +106,9 @@ class PiiMatch:
 
 REGEX_CONFIDENCE = {
     "AADHAAR": 0.99, "PAN": 0.99, "PASSPORT": 0.95, "DL": 0.95, "VOTER_ID": 0.95,
-    "PHONE": 0.85, "EMAIL": 0.98, "DOB": 0.60, "BANK_ACCOUNT": 0.80, "IFSC": 0.90
+    "PHONE": 0.85, "EMAIL": 0.98, "DOB": 0.60, "BANK_ACCOUNT": 0.80, "IFSC": 0.90,
+    "MONEY": 0.80, "EMP_ID": 0.50,
+    "PERSON": 0.85, "GPE": 0.80, "ORG": 0.85
 }
 
 
@@ -143,11 +164,8 @@ def detect_in_page(page: fitz.Page, level: str) -> List[PiiMatch]:
             if not _validate(label, text_val):
                 continue
             
-            # Find all physical locations of this string on the page
             rects = page.search_for(text_val)
             for rect in rects:
-                # Use a rounded tuple to deduplicate exact overlapping instances
-                # (e.g. if regex matched twice against disjoint parts of a sentence)
                 r_key = (round(rect.x0, 2), round(rect.y0, 2), round(rect.x1, 2), round(rect.y1, 2))
                 if r_key not in seen_rects:
                     seen_rects.add(r_key)
@@ -160,6 +178,35 @@ def detect_in_page(page: fitz.Page, level: str) -> List[PiiMatch]:
                         bbox=[rect.x0, rect.y0, rect.x1, rect.y1],
                         confidence=REGEX_CONFIDENCE.get(label, 0.80)
                     ))
+
+    # --- 2. NLP Entity Recognition (Presidio) ---
+    if analyzer and level in ["medium", "high"]:
+        presidio_results = analyzer.analyze(text=text, language='en')
+        for r in presidio_results:
+            ent_type = r.entity_type
+            if ent_type in ["PERSON", "LOCATION", "ORGANIZATION", "NRP", "IBAN_CODE", "CREDIT_CARD"]:
+                text_val = text[r.start:r.end].strip()
+                if len(text_val) < 3: continue
+                if r.score < 0.6: continue
+                
+                # Map Presidio labels to our UI badge labels
+                mapped_label = "PERSON" if ent_type == "PERSON" else "ORG" if ent_type == "ORGANIZATION" else "GPE" if ent_type == "LOCATION" else ent_type
+                
+                rects = page.search_for(text_val)
+                for rect in rects:
+                    r_key = (round(rect.x0, 2), round(rect.y0, 2), round(rect.x1, 2), round(rect.y1, 2))
+                    if r_key not in seen_rects:
+                        seen_rects.add(r_key)
+                        matches.append(PiiMatch(
+                            id=str(uuid.uuid4()),
+                            text=text_val,
+                            label=mapped_label,
+                            mask=_mask_for(mapped_label, text_val),
+                            page_index=page.number,
+                            bbox=[rect.x0, rect.y0, rect.x1, rect.y1],
+                            confidence=round(r.score, 2)
+                        ))
+
     return matches
 
 
@@ -186,7 +233,6 @@ def detect_in_ocr(ocr_page: OcrPageResult, level: str) -> List[PiiMatch]:
             if bbox_res:
                 bbox_rect, ocr_conf = bbox_res
                 bbox = [bbox_rect.x0, bbox_rect.y0, bbox_rect.x1, bbox_rect.y1]
-                # Tesseract conf is 0-100. Blend by taking minimum to penalize bad OCR
                 final_conf = min(REGEX_CONFIDENCE.get(label, 0.80), ocr_conf / 100.0)
             else:
                 bbox = None
@@ -201,6 +247,38 @@ def detect_in_ocr(ocr_page: OcrPageResult, level: str) -> List[PiiMatch]:
                 bbox=bbox,
                 confidence=round(final_conf, 2)
             ))
+
+    # --- 2. NLP Entity Recognition (Presidio) ---
+    if analyzer and level in ["medium", "high"]:
+        presidio_results = analyzer.analyze(text=text, language='en')
+        for r in presidio_results:
+            ent_type = r.entity_type
+            if ent_type in ["PERSON", "LOCATION", "ORGANIZATION", "NRP", "IBAN_CODE", "CREDIT_CARD"]:
+                text_val = text[r.start:r.end].strip()
+                if len(text_val) < 3: continue
+                if r.score < 0.6: continue
+                
+                mapped_label = "PERSON" if ent_type == "PERSON" else "ORG" if ent_type == "ORGANIZATION" else "GPE" if ent_type == "LOCATION" else ent_type
+                
+                bbox_res = _resolve_bbox_and_conf(text_val, words)
+                if bbox_res:
+                    bbox_rect, ocr_conf = bbox_res
+                    bbox = [bbox_rect.x0, bbox_rect.y0, bbox_rect.x1, bbox_rect.y1]
+                    final_conf = min(r.score, ocr_conf / 100.0)
+                else:
+                    bbox = None
+                    final_conf = r.score
+
+                matches.append(PiiMatch(
+                    id=str(uuid.uuid4()),
+                    text=text_val,
+                    label=mapped_label,
+                    mask=_mask_for(mapped_label, text_val),
+                    page_index=ocr_page.page_index,
+                    bbox=bbox,
+                    confidence=round(final_conf, 2)
+                ))
+
     return matches
 
 

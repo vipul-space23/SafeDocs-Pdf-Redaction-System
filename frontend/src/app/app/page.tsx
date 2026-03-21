@@ -416,19 +416,26 @@ export default function App() {
                             ) : (
                               <Square className="w-6 h-6 text-slate-400" />
                             )}
-                            <div>
-                               <div className="flex items-center gap-2">
-                                <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">{m.label.replace('_', ' ')}</span>
-                                {m.confidence !== undefined && (
-                                   <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${m.confidence > 0.9 ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
-                                     {Math.round(m.confidence * 100)}% Match
-                                   </span>
-                                )}
+                              <div className="flex flex-col">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md border shadow-sm ${
+                                    m.label === 'PERSON' ? 'bg-blue-100 text-blue-700 border-blue-200' :
+                                    m.label === 'ORG' ? 'bg-green-100 text-green-700 border-green-200' :
+                                    m.label === 'GPE' ? 'bg-orange-100 text-orange-700 border-orange-200' :
+                                    'bg-slate-100 text-slate-600 border-slate-200'
+                                  }`}>
+                                    {m.label.replace('_', ' ')}
+                                  </span>
+                                  {m.confidence !== undefined && (
+                                     <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${m.confidence > 0.9 ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
+                                       {Math.round(m.confidence * 100)}% Match
+                                     </span>
+                                  )}
+                                </div>
+                                <p className={`font-mono font-medium text-base ${m.selected ? 'text-slate-900' : 'text-slate-400 line-through'}`}>
+                                  {m.selected ? m.mask : m.text}
+                                </p>
                               </div>
-                              <p className={`font-mono font-medium mt-1 text-base ${m.selected ? 'text-slate-900' : 'text-slate-400 line-through'}`}>
-                                {m.selected ? m.mask : m.text}
-                              </p>
-                            </div>
                           </div>
                           <span className="text-xs font-bold px-3 py-1 rounded-full bg-white border border-slate-200 text-slate-500 shadow-sm whitespace-nowrap">Pg {m.page_index + 1}</span>
                         </div>
@@ -491,28 +498,40 @@ export default function App() {
           {/* STEP 5: Result */}
           {step === 'result' && redactedPdfUrl && (
             <div className="space-y-6 animate-in">
-              <div className="bg-white border border-slate-200 shadow-xl rounded-3xl p-6 md:p-10">
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
-                  <div>
-                    <h2 className="text-3xl font-extrabold text-slate-900 flex items-center gap-3">
-                      Redaction Complete <CheckCircle className="w-6 h-6 text-emerald-500" />
+              <div className="bg-white border border-slate-200 shadow-2xl rounded-[2.5rem] p-6 md:p-10 relative overflow-hidden">
+                {/* Decorative background glow */}
+                <div className="absolute top-[-50%] right-[-10%] w-[500px] h-[500px] bg-emerald-400/10 rounded-full mix-blend-multiply filter blur-[100px] pointer-events-none" />
+
+                <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10 pb-8 border-b border-slate-100 relative z-10">
+                  <div className="flex-1">
+                    <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-emerald-50 border border-emerald-100 text-emerald-700 rounded-full text-xs font-black uppercase tracking-widest mb-4 shadow-sm">
+                       <CheckCircle className="w-3 h-3" /> Fully Secured
+                    </div>
+                    <h2 className="text-4xl lg:text-5xl font-black text-slate-900 tracking-tight">
+                      Redaction Complete
                     </h2>
-                    <p className="font-medium text-slate-500 mt-2">
+                    <p className="font-medium text-slate-500 mt-3 break-all text-sm md:text-base">
                        {downloadFilename}
                       {processingTime !== null && (
-                        <> {' · '} <span className="text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded-md">{processingTime}s</span></>
+                        <> {' · '} <span className="text-emerald-700 font-black bg-emerald-100 px-2 py-0.5 rounded-md text-xs">{processingTime}s</span></>
                       )}
                     </p>
                   </div>
-                  <div className="flex gap-3">
-                    <button onClick={handleReset} className="px-5 py-3 rounded-xl font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors flex items-center gap-2">
-                      <RotateCcw className="w-4 h-4" /> Start Over
+                  
+                  <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto shrink-0 mt-4 md:mt-0">
+                    <button 
+                      onClick={handleReset} 
+                      className="w-full sm:w-auto justify-center px-6 py-4 rounded-2xl font-bold text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 hover:text-slate-900 transition-colors flex items-center gap-2 shadow-sm"
+                    >
+                      <RotateCcw className="w-5 h-5" /> Start Over
                     </button>
                     <button
                       onClick={handleDownload}
-                      className="px-6 py-3 rounded-xl font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-500/20 transition-all hover:-translate-y-0.5 flex items-center gap-2"
+                      className="w-full sm:w-auto justify-center px-8 py-4 rounded-2xl font-black text-white bg-slate-900 shadow-xl shadow-slate-900/20 hover:shadow-2xl hover:shadow-slate-900/30 transition-all hover:-translate-y-1 flex items-center gap-3 overflow-hidden relative group"
                     >
-                      <Download className="w-4 h-4" /> Download PDF
+                      <div className="absolute inset-0 bg-gradient-to-r from-emerald-500 via-indigo-500 to-fuchsia-500 opacity-0 group-hover:opacity-20 transition-opacity duration-500" />
+                      <Download className="w-5 h-5 group-hover:animate-bounce relative z-10" /> 
+                      <span className="relative z-10">Download PDF</span>
                     </button>
                   </div>
                 </div>

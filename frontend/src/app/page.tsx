@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { Shield, FileSearch, CheckCircle, ArrowRight, EyeOff, Trash2, UserCheck, Scan, Lock, Cpu, ServerOff, Zap } from 'lucide-react';
 
 export default function LandingPage() {
+
   return (
     <div className="min-h-screen relative bg-slate-50 text-slate-900 overflow-hidden selection:bg-indigo-100 selection:text-indigo-900">
       
@@ -15,9 +16,6 @@ export default function LandingPage() {
       {/* Navigation */}
       <nav className="relative z-50 flex items-center justify-between px-6 lg:px-12 py-6 max-w-7xl mx-auto backdrop-blur-sm">
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-2xl bg-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-600/30">
-            <Shield className="w-6 h-6 text-white" />
-          </div>
           <span className="text-2xl font-bold tracking-tight text-slate-900">Safe<span className="text-indigo-600">Doc</span></span>
         </div>
         
@@ -40,7 +38,7 @@ export default function LandingPage() {
 
         
         <h1 className="text-6xl md:text-8xl font-black tracking-tighter leading-[1.05] max-w-5xl text-slate-900 animate-fade-in">
-          The Privacy Layer for 
+          The Privacy Layer for
           <span className="block text-transparent bg-clip-text bg-gradient-to-r from-cyan-600 via-indigo-600 to-fuchsia-600 mt-2"> Your Documents</span>
         </h1>
         
@@ -59,47 +57,72 @@ export default function LandingPage() {
         </div>
 
         {/* Hero Mockup Preview */}
-        <div className="mt-28 w-full max-w-5xl relative animate-slide-up group">
-          <div className="absolute inset-0 bg-gradient-to-t from-slate-50 via-slate-50/20 to-transparent z-20 pointer-events-none rounded-[2.5rem]" />
+        <div className="mt-28 w-full max-w-5xl relative animate-slide-up group select-none">
           
-          <div className="relative rounded-[2.5rem] p-3 md:p-5 bg-white/50 backdrop-blur-3xl border border-white/80 shadow-[0_40px_80px_-20px_rgba(0,0,0,0.1)] transition-transform duration-700 hover:-translate-y-2">
-            <div className="rounded-[2rem] overflow-hidden border border-slate-800 shadow-inner bg-black relative aspect-video md:aspect-[21/9]">
-               <img 
-                 src="/vintage_redacted_doc.png" 
-                 alt="Confidential Top Secret Redacted Document"
-                 className="absolute inset-0 w-full h-full object-cover object-top opacity-80 filter contrast-125 transition-transform duration-[2000ms] group-hover:scale-[1.03]"
-                 loading="lazy"
-               />
-               
-               {/* Internal Black Fade Overlay */}
-               <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent pointer-events-none" />
-               
-               {/* Floating UI Overlays */}
-               <div className="absolute top-[20%] left-[5%] md:left-[10%] bg-white/90 backdrop-blur-md animate-float p-4 md:p-5 rounded-3xl shadow-2xl border border-slate-200/50 flex items-center gap-3 md:gap-4 w-max">
-                 <div className="w-10 h-10 md:w-12 md:h-12 rounded-2xl bg-fuchsia-100 flex items-center justify-center">
-                   <Scan className="w-5 h-5 md:w-6 md:h-6 text-fuchsia-600" />
+          <div className="relative p-6 md:p-10 bg-white/40 backdrop-blur-3xl border border-white/80 shadow-xl rounded-[3rem] overflow-hidden flex flex-col">
+             
+             {/* Friendly Mock Dashboard Header */}
+             <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 pb-6 border-b border-slate-200/60 gap-4">
+               <div className="text-left flex items-center gap-4">
+                 <div className="w-12 h-12 bg-white rounded-2xl shadow-sm border border-slate-200 flex items-center justify-center shrink-0">
+                    <Shield className="w-6 h-6 text-indigo-600" />
                  </div>
-                 <div className="text-left">
-                   <p className="text-xs md:text-sm font-black text-slate-900">Aadhaar Detected</p>
-                   <p className="text-[10px] md:text-xs text-slate-500 font-bold mt-0.5 md:mt-1 tracking-widest">XXXX XXXX 9012</p>
+                 <div>
+                   <h3 className="text-xl font-black text-slate-900">Live Redaction Preview</h3>
+                   <p className="text-xs md:text-sm font-bold text-slate-500 mt-1 max-w-md">Our NLP engine instantly detects and destroys sensitive fields locally.</p>
                  </div>
                </div>
+               <div className="hidden md:flex items-center gap-2 bg-emerald-50 text-emerald-700 px-4 py-2 rounded-full border border-emerald-100 font-bold text-[10px] uppercase tracking-widest shadow-sm">
+                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse drop-shadow-sm" />
+                 System Active
+               </div>
+             </div>
 
-               <div className="absolute bottom-[20%] right-[5%] md:right-[10%] bg-white/90 backdrop-blur-md animate-float animation-delay-2000 p-4 md:p-5 rounded-3xl shadow-2xl border border-slate-200/50 flex items-center gap-3 md:gap-4 w-max">
-                 <div className="w-10 h-10 md:w-12 md:h-12 rounded-2xl bg-cyan-100 flex items-center justify-center">
-                   <Lock className="w-5 h-5 md:w-6 md:h-6 text-cyan-600" />
-                 </div>
-                 <div className="text-left">
-                   <p className="text-xs md:text-sm font-black text-slate-900">Redaction Applied</p>
-                   <p className="text-[10px] md:text-xs text-slate-500 font-bold mt-0.5 md:mt-1">Irrecoverable vector flattening.</p>
-                 </div>
-               </div>
-            </div>
+             {/* Transaction Bento Grid */}
+             <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] items-center gap-6 md:gap-10">
+                
+                {/* Before (Input) */}
+                <div className="relative bg-slate-100/80 rounded-[2rem] p-4 md:p-6 border border-white shadow-inner flex flex-col group hover:bg-white transition-colors">
+                   <div className="flex w-full items-center justify-between mb-4 px-2">
+                      <div className="flex items-center gap-2">
+                        <FileSearch className="w-4 h-4 text-slate-400" />
+                        <span className="text-xs font-bold uppercase tracking-widest text-slate-500">Input Document</span>
+                      </div>
+                      <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse drop-shadow-[0_0_8px_rgba(251,191,36,0.8)]" />
+                   </div>
+                   <div className="aspect-[4/5] rounded-xl overflow-hidden bg-slate-100 shadow-sm border border-slate-200 transition-transform duration-500 group-hover:scale-[1.03]">
+                      <img src="/loan-before.png" className="w-full h-full object-cover object-top" alt="Original Document" />
+                   </div>
+                </div>
+
+                {/* Arrow Indicator */}
+                <div className="flex flex-col items-center justify-center py-4">
+                   <div className="w-14 h-14 bg-white rounded-full shadow-xl flex items-center justify-center border border-slate-200 text-indigo-600 animate-bounce">
+                      <ArrowRight className="w-6 h-6 rotate-90 md:rotate-0" />
+                   </div>
+                   <div className="mt-4 px-3 py-1 bg-indigo-50/80 backdrop-blur-md rounded-full border border-indigo-100 shadow-sm hidden md:block">
+                     <span className="text-[10px] uppercase tracking-widest font-bold text-indigo-700">Zero-Persistence</span>
+                   </div>
+                </div>
+
+                {/* After (Output) */}
+                <div className="relative bg-white rounded-[2rem] p-4 md:p-6 border border-slate-200 shadow-2xl flex flex-col group hover:bg-slate-50/80 transition-colors">
+                   <div className="flex w-full items-center justify-between mb-4 px-2">
+                      <div className="flex items-center gap-2">
+                        <Shield className="w-4 h-4 text-emerald-500" />
+                        <span className="text-xs font-bold uppercase tracking-widest text-slate-500">Secured Output</span>
+                      </div>
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse drop-shadow-[0_0_8px_rgba(16,185,129,0.8)]" />
+                   </div>
+                   <div className="aspect-[4/5] rounded-xl overflow-hidden bg-slate-100 shadow-inner border border-slate-200/50 transition-transform duration-500 group-hover:scale-[1.03]">
+                      <img src="/loan-after.png" className="w-full h-full object-cover object-top filter contrast-125" alt="Redacted Document" />
+                   </div>
+                </div>
+
+             </div>
           </div>
         </div>
       </section>
-
-
 
       {/* How it Works Pipeline */}
       <section id="how-it-works" className="py-32 relative z-10">
@@ -168,11 +191,11 @@ export default function LandingPage() {
             
             <div className="bg-white/80 backdrop-blur-xl border border-slate-200/60 shadow-xl shadow-slate-200/40 rounded-[2.5rem] p-10 relative overflow-hidden group hover:border-cyan-300 transition-colors">
               <div className="w-16 h-16 rounded-2xl bg-cyan-50 border border-cyan-100 flex items-center justify-center mb-8">
-                <EyeOff className="w-8 h-8 text-cyan-600" />
+                <Cpu className="w-8 h-8 text-cyan-600" />
               </div>
-              <h3 className="text-2xl font-black text-slate-900 mb-4 tracking-tight">10+ Data Profiles</h3>
+              <h3 className="text-2xl font-black text-slate-900 mb-4 tracking-tight">Hybrid AI Engine</h3>
               <p className="text-slate-500 font-medium leading-relaxed">
-                Hyper-tuned regex matching for PAN, Aadhaar, Passports, Phones, Bank Accounts, and IFSC codes.
+                Powered by Microsoft Presidio NLP to identify unstructured entities, seamlessly fused with hyper-tuned regex matching for PAN, Aadhaar, Passports, Phones, Bank Accounts, and IFSC codes.
               </p>
             </div>
 
